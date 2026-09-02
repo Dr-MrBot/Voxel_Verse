@@ -89,6 +89,7 @@ Voxel Verse features custom skeletal and procedural animations that bring every 
 | **Q** | Drop held item onto the ground |
 | **1 – 9 Keys** | Select items in your hotbar |
 | **Mouse Wheel** | Scroll through hotbar items |
+| **Top Corner Button / F11** | Toggle Full Screen Mode |
 | **Esc** | Pause game / Open options menu |
 
 ---

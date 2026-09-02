@@ -56,6 +56,8 @@ export class Game {
     this.menuUI = new MenuUI(this);
     this.ui = this.hud; // alias for showNotification
 
+    this.initFullscreenToggle();
+
     // Bind canvas click to request pointer lock when playing
     this.renderer.domElement.addEventListener('click', () => {
       if (this.state === 'PLAYING' && !this.inventoryUI.isOpen() && !this.creativeUI.isOpen()) {
@@ -96,6 +98,48 @@ export class Game {
         }
       }
     });
+  }
+
+  initFullscreenToggle() {
+    const btn = document.getElementById('btn-fullscreen-toggle');
+    if (!btn) return;
+
+    const iconEnter = document.getElementById('icon-fs-enter');
+    const iconExit = document.getElementById('icon-fs-exit');
+
+    const updateUI = () => {
+      const isFS = !!document.fullscreenElement;
+      if (isFS) {
+        if (iconEnter) iconEnter.classList.add('hidden');
+        if (iconExit) iconExit.classList.remove('hidden');
+        btn.title = 'Exit Fullscreen';
+      } else {
+        if (iconEnter) iconEnter.classList.remove('hidden');
+        if (iconExit) iconExit.classList.add('hidden');
+        btn.title = 'Full Screen Mode (F11)';
+      }
+      setTimeout(() => {
+        if (this.camera && this.renderer) {
+          this.camera.aspect = window.innerWidth / window.innerHeight;
+          this.camera.updateProjectionMatrix();
+          this.renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+      }, 100);
+    };
+
+    btn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch((err) => {
+          console.warn('Fullscreen request failed:', err);
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+    });
+
+    document.addEventListener('fullscreenchange', updateUI);
   }
 
   setGameMode(mode) {

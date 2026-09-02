@@ -1067,3 +1067,48 @@ button:active {
   width: 100%;
 }
 
+/* ==========================================================================
+   TOP RIGHT FULLSCREEN BUTTON
+   ========================================================================== */
+.btn-fullscreen {
+  position: fixed;
+  top: 16px;
+  right: 18px;
+  width: 44px;
+  height: 44px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  border-radius: 12px;
+  color: #00e5ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 10px rgba(0, 229, 255, 0.15);
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  user-select: none;
+}
+.btn-fullscreen:hover {
+  background: rgba(0, 229, 255, 0.2);
+  border-color: #00e5ff;
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.35);
+}
+.btn-fullscreen:active {
+  transform: scale(0.95);
+}
+.btn-fullscreen svg {
+  display: block;
+  transition: transform 0.2s ease;
+}
+.btn-fullscreen:hover svg {
+  transform: scale(1.1);
+}
+.btn-fullscreen svg.hidden {
+  display: none !important;
+}
+
+
