@@ -1,112 +1,135 @@
 @echo off
 setlocal enabledelayedexpansion
-title Voxel Verse — 3D Browser Voxel Survival Odyssey
+title Voxel Verse — 3D Browser Voxel Odyssey
 
-:: Navigate to project directory
+:: Change working directory to script folder
 cd /d "%~dp0"
 
-echo ============================================================
-echo   VOXEL VERSE - Windows One-Click Launcher
-echo   Developer: MOHAMMAD FAHAD
+:: Set console text color (Bright White on Dark Blue / Modern Dark Cyan)
+color 0B
+
+cls
+echo.
+echo  ======================================================================
+echo     __     __              _   __     __
+echo     \ \   / /__  _  _____ ^| ^|  \ \   / /__ _ __ ___  ___
+echo      \ \ / / _ \^| \/ / _ \^| ^|   \ \ / / _ \ '__/ __^|/ _ \
+echo       \ V / (_) ^>  ^<  __/^| ^|__  \ V /  __/ ^|  \__ \  __/
+echo        \_/ \___/_/\_\___^|_____^|  \_/ \___^|_^|  ^|___/\___^|
+echo.
+echo                 3D BROWSER VOXEL SURVIVAL ODYSSEY
+echo.
+echo   Developer : MOHAMMAD FAHAD
 echo   Repository: https://github.com/Dr-MrBot/Voxel_Verse.git
-echo ============================================================
+echo  ======================================================================
 echo.
 
-echo Checking requirements...
+:: ---------------------------------------------------------
+:: 1. System Requirements & Node.js Verification
+:: ---------------------------------------------------------
+echo  [*] [1/3] Checking System Requirements...
 
-:: 1. Check if Node.js is installed
 where node >nul 2>nul
 if %errorlevel% neq 0 (
-    echo Node.js was not detected on your system.
-    echo Attempting automatic installation of Node.js LTS via winget...
+    echo.
+    echo  [!] Node.js was not detected on this system.
+    echo  [*] Attempting automatic installation of Node.js LTS via winget...
     echo.
     where winget >nul 2>nul
     if %errorlevel% equ 0 (
-        echo Running Windows Package Manager (winget)...
+        echo  [*] Running Windows Package Manager...
         winget install OpenJS.NodeJS.LTS -e --silent --accept-package-agreements --accept-source-agreements
         
-        :: Refresh PATH for current session
-        if exist "C:\Program Files\nodejs" (
-            set "PATH=C:\Program Files\nodejs;%PATH%"
-        )
-        if exist "%LocalAppData%\Programs\nodejs" (
-            set "PATH=%LocalAppData%\Programs\nodejs;%PATH%"
-        )
+        :: Refresh PATH for common installation directories
+        if exist "C:\Program Files\nodejs" set "PATH=C:\Program Files\nodejs;%PATH%"
+        if exist "%LocalAppData%\Programs\nodejs" set "PATH=%LocalAppData%\Programs\nodejs;%PATH%"
+        
         where node >nul 2>nul
         if !errorlevel! neq 0 (
             echo.
-            echo [NOTE] Node.js installation finished, but a terminal restart may be needed.
-            echo If this window fails, please close it and double-click start.bat again.
+            echo  [!] Node.js was installed, but Windows requires a quick terminal restart.
+            echo  [!] Please close this window and double-click start.bat again.
+            echo.
+            pause
+            exit /b 1
         )
     ) else (
-        echo [ERROR] winget is not available on this Windows installation.
-        echo Please manually download and install Node.js LTS from:
-        echo https://nodejs.org/
+        echo.
+        echo  [ERROR] winget is unavailable on this system.
+        echo  Please download and install Node.js LTS from:
+        echo  https://nodejs.org/
         echo.
         pause
         exit /b 1
     )
-)
-
-:: 2. Verify Node and npm
-where node >nul 2>nul
-if %errorlevel% neq 0 (
-    echo [ERROR] Node.js command 'node' is still not accessible.
-    echo Please install Node.js from https://nodejs.org/ and run start.bat again.
-    echo.
-    pause
-    exit /b 1
 )
 
 for /f "tokens=*" %%v in ('node -v 2^>nul') do set "NODE_VER=%%v"
 for /f "tokens=*" %%v in ('npm -v 2^>nul') do set "NPM_VER=%%v"
 
-echo Node.js detected: %NODE_VER%
-echo npm detected:     v%NPM_VER%
+echo       [+] Node.js  : %NODE_VER% (Detected)
+echo       [+] npm CLI  : v%NPM_VER% (Detected)
 echo.
 
-:: 3. Check for package.json
+:: ---------------------------------------------------------
+:: 2. Project Files & Dependencies Verification
+:: ---------------------------------------------------------
+echo  [*] [2/3] Verifying Project Dependencies...
+
 if not exist "package.json" (
-    echo [ERROR] package.json was not found in:
-    echo %~dp0
-    echo Please make sure start.bat is located in the root folder of Voxel Verse.
+    echo.
+    echo  [ERROR] package.json not found in %~dp0
+    echo  Please ensure start.bat is inside the project root folder.
     echo.
     pause
     exit /b 1
 )
 
-:: 4. Check & install dependencies
 if not exist "node_modules" (
-    echo Installing dependencies (first run only)...
+    echo       [*] First-time launch: Installing dependencies with npm...
     call npm install
     if !errorlevel! neq 0 (
         echo.
-        echo [ERROR] npm install encountered an error.
-        echo Please check your internet connection and try again.
+        echo  [ERROR] npm install failed. Please check your internet connection.
+        echo.
         pause
         exit /b 1
     )
-    echo Dependencies successfully installed.
-    echo.
+    echo       [+] Dependencies installed successfully.
 ) else (
-    echo Dependencies verified.
+    echo       [+] Dependencies verified.
 )
-
-:: 5. Start Voxel Verse development server & open browser
-echo.
-echo Starting Voxel Verse...
-echo Opening browser at http://localhost:5173...
-echo.
-echo ------------------------------------------------------------
-echo Server is running. Press Ctrl+C in this window to stop.
-echo ------------------------------------------------------------
 echo.
 
-:: Launch Vite with automatic browser open
+:: ---------------------------------------------------------
+:: 3. Launch Development Server & Open Browser
+:: ---------------------------------------------------------
+echo  [*] [3/3] Starting Local Server ^& Launching Game...
+echo.
+echo  ======================================================================
+echo    GAME CONTROLS QUICK REFERENCE:
+echo     - WASD        : Move ^& Strafe
+echo     - Space       : Jump / Ascend (Flight)
+echo     - Shift       : Sneak / Descend (Flight)
+echo     - Left-Click  : Mine / Attack (Hold to mine blocks)
+echo     - Right-Click : Place Block / Interact / Open Doors
+echo     - E           : Inventory ^& Crafting / Creative Catalog
+echo     - F5          : Toggle First-Person / Third-Person Camera
+echo     - F           : Toggle Creative Flight Mode
+echo     - Q           : Drop Selected Hotbar Item
+echo     - Esc         : Pause Game
+echo  ======================================================================
+echo.
+echo   Local Address : http://localhost:5173/
+echo   Server Status : ACTIVE
+echo   (Press Ctrl+C in this terminal window to stop the server)
+echo.
+
+:: Start Vite dev server with automatic browser launch
 call npm run dev -- --open
 
 if %errorlevel% neq 0 (
     echo.
-    echo [ERROR] Voxel Verse server exited unexpectedly.
+    echo  [ERROR] The game server stopped unexpectedly.
     pause
 )
