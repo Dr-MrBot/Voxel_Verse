@@ -1,11 +1,32 @@
-# 🌐 Voxel Verse
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=2,12,24,30&height=180&section=header&text=Voxel%20Verse&fontSize=52&animation=fadeIn&fontColor=00E5FF&desc=3D%20Browser%20Voxel%20Survival%20Odyssey&descSize=18&descAlignY=64&descAlign=50" width="100%" alt="Voxel Verse Animated Banner" />
 
-[![Developer](https://img.shields.io/badge/Developer-MOHAMMAD%20FAHAD-00e5ff?style=for-the-badge&logo=github)](https://github.com/Dr-MrBot/Voxel_Verse.git)
-[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20%7C%20Web-blue?style=for-the-badge&logo=windows)](https://github.com/Dr-MrBot/Voxel_Verse.git)
-[![Engine](https://img.shields.io/badge/Built%20With-Three.js%20%26%20WebGL-ff007f?style=for-the-badge&logo=three.js)](https://threejs.org/)
-[![License](https://img.shields.io/badge/License-MIT-brightgreen?style=for-the-badge)](https://github.com/Dr-MrBot/Voxel_Verse.git)
+  <a href="https://github.com/Dr-MrBot/Voxel_Verse">
+    <img src="https://readme-typing-svg.demolab.com?font=Outfit&weight=600&size=20&duration=2500&pause=1000&color=00E5FF&center=true&vCenter=true&width=600&lines=Explore+Infinite+Procedural+Voxel+Worlds;Mine+Ores+%26+Craft+Epic+Tools;Survival+and+Creative+Modes+with+Flight;100%25+Original+Browser+WebGL+Sandbox;Created+by+MOHAMMAD+FAHAD" alt="Typing SVG" />
+  </a>
+  <br />
 
-**Voxel Verse** is an original 3D voxel sandbox adventure game that runs directly in your web browser. Explore infinite procedural mountains, deep caves, and lush forests. Mine ores, craft tools, build shelters, encounter wildlife, or switch to Creative Mode to fly and build freely — with zero installation setup required.
+  [![Developer](https://img.shields.io/badge/Developer-MOHAMMAD%20FAHAD-00e5ff?style=for-the-badge&logo=github)](https://github.com/Dr-MrBot/Voxel_Verse.git)
+  [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20%7C%20Web-blue?style=for-the-badge&logo=windows)](https://github.com/Dr-MrBot/Voxel_Verse.git)
+  [![Engine](https://img.shields.io/badge/Built%20With-Three.js%20%26%20WebGL-ff007f?style=for-the-badge&logo=three.js)](https://threejs.org/)
+  [![License](https://img.shields.io/badge/License-MIT-brightgreen?style=for-the-badge)](https://github.com/Dr-MrBot/Voxel_Verse.git)
+</div>
+
+<br />
+
+**Voxel Verse** is an original, fully playable 3D voxel sandbox adventure game that runs directly in your web browser. Explore infinite procedural mountains, deep caves, and lush forests. Mine ores, craft tools, build shelters, encounter wildlife, or switch to Creative Mode to fly and build freely — with zero installation setup required.
+
+---
+
+## 📸 Game Screenshot
+
+<div align="center">
+  <br />
+  <img src="./img.png" alt="Voxel Verse In-Game Screenshot" width="100%" style="border-radius: 12px; border: 2px solid #00e5ff; box-shadow: 0 8px 30px rgba(0, 229, 255, 0.25);" />
+  <br />
+  <p><em>▲ Real in-game screenshot of Voxel Verse showing procedural terrain, 3D character, celestial lighting, and interactive HUD</em></p>
+  <br />
+</div>
 
 ---
 
@@ -136,6 +157,7 @@ npm run dev -- --open
     </a>
   </p>
   <br />
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=2,12,24,30&height=100&section=footer" width="100%" alt="Footer Wave" />
 </div>
 
 ---
