@@ -47,16 +47,29 @@ That's it! The launcher will automatically set up everything needed and open the
 
 ---
 
-## 🏃 Smooth Animations
+## ✨ Complete Animation Systems
 
-Everything in Voxel Verse is animated to feel responsive and satisfying:
+Voxel Verse features custom skeletal and procedural animations that bring every movement and interaction to life:
 
-- **Character Movement**: Natural walking and sprinting limb swings that automatically match your speed.
-- **Idle Breathing**: Gentle breathing motion while standing still.
-- **Jumping & Falling**: Dynamic leg tucks and arm reactions while in mid-air.
-- **Mining & Chopping**: Rhythmic arm swings in both first-person and third-person view with visible cracks appearing on the block.
-- **Floating Item Drops**: Mined blocks pop out as 3D mini-items that hover and spin in place until you walk near to pick them up.
-- **Damage Reaction**: Your character flinches and flashes red when taking damage.
+### 👤 Player Character Animations
+- **Idle Breathing**: Torso and head gently bob up and down with a relaxed breathing rhythm while standing still.
+- **Natural Walking & Sprinting**: Alternating pendulum limb swing matching movement speed. Sprinting dynamically increases the swing rate from `8.5` to `14.0 rad/s` with a wider arm-and-leg arc.
+- **Airborne Jump & Fall**: When leaping into the air, legs tuck in dynamically while arms raise upward to react to vertical momentum.
+- **First-Person Tool Bobbing**: In first-person view, your hand and equipped tool bob in a gentle figure-8 motion as you walk.
+- **Mining & Tool Swing Cadence**: Right arm swings in a forceful, natural chopping arc at **3.1 swings per second** (`0.32s` per stroke) in both first-person and third-person modes.
+- **Damage Flinch & Red Flash**: Taking damage causes the character to briefly flinch while all model textures flash bright crimson red.
+
+### 🧱 Interactive World & Physics Animations
+- **Progressive Block Cracking**: Blocks show visible 3D wireframe fissures that darken and spread as you continue mining them.
+- **3D Floating & Spinning Item Drops**: Broken blocks pop out as 3D mini-items that spin 360° continuously while floating up and down on a gentle wave until you pick them up.
+- **Celestial Day/Night Cycle**: The sun and moon orbit smoothly across the sky, casting golden-hour sunsets and revealing a twinkling night starfield.
+
+### 🐾 Creature & Wildlife Animations
+- **Animal Locomotion**: Four-legged walking cycles for Forest Stags, Wild Boars, and Woolly Rams.
+- **Bird Hopping**: Chirping Meadowbirds hop along the grass and flutter their wings as they explore fields.
+
+### 🎨 UI Micro-Animations
+- **Item Pickup Notifications**: Collecting items triggers animated badges on the right side of the screen that slide in, stack consecutive pickups (`+12 Stone`), and gently fade away.
 
 ---
 
@@ -104,11 +117,25 @@ npm run dev -- --open
 
 ---
 
-## 👨‍💻 Developer
+## 👨‍💻 Meet the Developer
 
-- **Lead Developer**: **MOHAMMAD FAHAD**
-- **Project**: **Voxel Verse**
-- **Official GitHub Repository**: [https://github.com/Dr-MrBot/Voxel_Verse.git](https://github.com/Dr-MrBot/Voxel_Verse.git)
+<div align="center">
+  <br />
+  <a href="https://github.com/Dr-MrBot">
+    <img src="https://github.com/Dr-MrBot.png" width="130" height="130" style="border-radius: 50%; border: 4px solid #00e5ff; box-shadow: 0 4px 20px rgba(0, 229, 255, 0.4);" alt="MOHAMMAD FAHAD" />
+  </a>
+  <h2 style="margin: 10px 0 4px 0; color: #00e5ff;">MOHAMMAD FAHAD</h2>
+  <p><strong>Creator & Lead Architect of Voxel Verse</strong></p>
+  <p>
+    <a href="https://github.com/Dr-MrBot">
+      <img src="https://img.shields.io/badge/GitHub-Profile-181717?style=for-the-badge&logo=github" alt="GitHub Profile" />
+    </a>
+    <a href="https://github.com/Dr-MrBot/Voxel_Verse">
+      <img src="https://img.shields.io/badge/Repository-Voxel_Verse-00e5ff?style=for-the-badge&logo=git" alt="Repository" />
+    </a>
+  </p>
+  <br />
+</div>
 
 ---
 
