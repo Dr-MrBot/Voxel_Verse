@@ -6,10 +6,12 @@ export const MOB_TYPES = {
   BOAR: 'boar',
   STAG: 'stag',
   RAM: 'ram',
+  MEADOWBIRD: 'meadowbird',
   // Hostile
   SHADOW_STALKER: 'shadow_stalker',
   BONE_ARCHER: 'bone_archer',
   TOXIC_SPORE: 'toxic_spore',
+  CAVERN_LURKER: 'cavern_lurker',
 };
 
 export class Mob {
@@ -23,14 +25,19 @@ export class Mob {
     this.velocity = new THREE.Vector3(0, 0, 0);
     this.rotationY = Math.random() * Math.PI * 2;
 
-    this.state = 'idle'; // 'idle', 'wander', 'chase', 'attack'
+    this.state = 'idle'; // 'idle', 'wander', 'chase', 'flee'
     this.stateTimer = 1.0 + Math.random() * 2.0;
-    this.isHostile = (type === MOB_TYPES.SHADOW_STALKER || type === MOB_TYPES.BONE_ARCHER || type === MOB_TYPES.TOXIC_SPORE);
+    this.isHostile = (
+      type === MOB_TYPES.SHADOW_STALKER ||
+      type === MOB_TYPES.BONE_ARCHER ||
+      type === MOB_TYPES.TOXIC_SPORE ||
+      type === MOB_TYPES.CAVERN_LURKER
+    );
 
-    this.health = this.isHostile ? 14 : 10;
+    this.health = this.isHostile ? 16 : 10;
     this.maxHealth = this.health;
-    this.walkSpeed = this.isHostile ? 3.8 : 2.0;
-    this.attackRange = 1.6;
+    this.walkSpeed = this.isHostile ? 3.6 : 2.2;
+    this.attackRange = 1.7;
     this.attackDamage = 3;
     this.attackCooldown = 0;
     this.isDead = false;
@@ -40,6 +47,7 @@ export class Mob {
 
     this.walkCycle = 0;
     this.hurtTimer = 0;
+    this.originalColors = new Map();
 
     this.initModel();
   }
@@ -50,7 +58,9 @@ export class Mob {
     const box = (w, h, d, color) => {
       const geo = new THREE.BoxGeometry(w, h, d);
       const mat = new THREE.MeshLambertMaterial({ color });
-      return new THREE.Mesh(geo, mat);
+      const mesh = new THREE.Mesh(geo, mat);
+      this.originalColors.set(mesh, color);
+      return mesh;
     };
 
     this.limbs = [];
@@ -69,7 +79,6 @@ export class Mob {
       head.add(snout);
       this.group.add(head);
 
-      // 4 Legs
       for (const [lx, lz] of [[-0.35, 0.4], [0.35, 0.4], [-0.35, -0.4], [0.35, -0.4]]) {
         const leg = box(0.24, 0.5, 0.24, 0x8a4b44);
         leg.position.set(lx, 0.25, lz);
@@ -84,7 +93,6 @@ export class Mob {
 
       const head = box(0.45, 0.5, 0.5, 0x82542e);
       head.position.set(0, 1.5, 0.7);
-      // Antlers
       const antlerL = box(0.08, 0.5, 0.08, 0xd9cbb8);
       antlerL.position.set(-0.2, 0.4, -0.1);
       head.add(antlerL);
@@ -99,13 +107,32 @@ export class Mob {
         this.group.add(leg);
         this.limbs.push(leg);
       }
+    } else if (this.type === MOB_TYPES.MEADOWBIRD) {
+      // Small colorful bird
+      const body = box(0.35, 0.35, 0.45, 0x29b6f6);
+      body.position.y = 0.3;
+      this.group.add(body);
+
+      const head = box(0.25, 0.25, 0.25, 0x0288d1);
+      head.position.set(0, 0.45, 0.25);
+      const beak = box(0.12, 0.08, 0.15, 0xffb300);
+      beak.position.set(0, -0.04, 0.18);
+      head.add(beak);
+      this.group.add(head);
+
+      for (const lx of [-0.1, 0.1]) {
+        const leg = box(0.06, 0.2, 0.06, 0xffb300);
+        leg.position.set(lx, 0.1, 0);
+        this.group.add(leg);
+        this.limbs.push(leg);
+      }
     } else if (this.type === MOB_TYPES.RAM) {
       // Woolly Ram
-      const body = box(1.0, 0.8, 1.3, 0xebe8dc); // Fluffy wool
+      const body = box(1.0, 0.8, 1.3, 0xebe8dc);
       body.position.y = 0.75;
       this.group.add(body);
 
-      const head = box(0.5, 0.5, 0.5, 0x2b2927); // Dark face
+      const head = box(0.5, 0.5, 0.5, 0x2b2927);
       head.position.set(0, 1.0, 0.8);
       this.group.add(head);
 
@@ -121,68 +148,63 @@ export class Mob {
       body.position.y = 1.3;
       this.group.add(body);
 
-      const head = box(0.5, 0.5, 0.5, 0x100a17);
-      head.position.set(0, 2.15, 0);
-      // Glowing violet eyes
-      const eyes = box(0.35, 0.08, 0.08, 0xb03aff);
-      eyes.position.set(0, 0.05, 0.26);
-      head.add(eyes);
+      const head = box(0.45, 0.45, 0.45, 0x120c1a);
+      head.position.set(0, 2.1, 0);
+      const eyeL = box(0.08, 0.05, 0.04, 0xbf55ec);
+      eyeL.position.set(-0.12, 0.05, 0.23);
+      head.add(eyeL);
+      const eyeR = box(0.08, 0.05, 0.04, 0xbf55ec);
+      eyeR.position.set(0.12, 0.05, 0.23);
+      head.add(eyeR);
       this.group.add(head);
 
-      for (const lx of [-0.18, 0.18]) {
-        const leg = box(0.2, 1.2, 0.2, 0x140e1c);
-        leg.position.set(lx, 0.6, 0);
+      for (const lx of [-0.15, 0.15]) {
+        const leg = box(0.18, 1.3, 0.18, 0x120c1a);
+        leg.position.set(lx, 0.65, 0);
         this.group.add(leg);
         this.limbs.push(leg);
       }
-    } else if (this.type === MOB_TYPES.TOXIC_SPORE) {
-      // Explosive green creeper-like plant creature
-      const body = box(0.65, 1.0, 0.65, 0x388e3c);
+    } else if (this.type === MOB_TYPES.CAVERN_LURKER) {
+      // Stony subterranean beast
+      const body = box(1.1, 0.8, 1.1, 0x424242);
       body.position.y = 0.8;
       this.group.add(body);
 
-      const head = box(0.7, 0.7, 0.7, 0x2e7d32);
-      head.position.set(0, 1.6, 0);
+      const head = box(0.7, 0.6, 0.6, 0x212121);
+      head.position.set(0, 0.9, 0.65);
+      const eyes = box(0.5, 0.1, 0.04, 0xff1744);
+      eyes.position.set(0, 0.08, 0.31);
+      head.add(eyes);
       this.group.add(head);
 
-      for (const [lx, lz] of [[-0.25, 0.25], [0.25, 0.25], [-0.25, -0.25], [0.25, -0.25]]) {
-        const leg = box(0.22, 0.45, 0.22, 0x1b5e20);
-        leg.position.set(lx, 0.22, lz);
+      for (const [lx, lz] of [[-0.45, 0.4], [0.45, 0.4], [-0.45, -0.4], [0.45, -0.4]]) {
+        const leg = box(0.28, 0.6, 0.28, 0x303030);
+        leg.position.set(lx, 0.3, lz);
         this.group.add(leg);
         this.limbs.push(leg);
       }
     } else {
-      // Default Bone Archer
-      const body = box(0.5, 0.9, 0.3, 0xd4d0c8);
-      body.position.y = 1.1;
+      // Default / Spore
+      const body = box(0.7, 0.9, 0.7, 0x4caf50);
+      body.position.y = 0.8;
       this.group.add(body);
 
-      const head = box(0.45, 0.45, 0.45, 0xbcb7ad);
-      head.position.set(0, 1.8, 0);
-      this.group.add(head);
-
-      for (const lx of [-0.16, 0.16]) {
-        const leg = box(0.18, 0.9, 0.18, 0xaba59b);
-        leg.position.set(lx, 0.45, 0);
-        this.group.add(leg);
-        this.limbs.push(leg);
-      }
+      const cap = box(0.9, 0.3, 0.9, 0x388e3c);
+      cap.position.set(0, 1.35, 0);
+      this.group.add(cap);
     }
 
     this.group.position.copy(this.position);
     this.scene.add(this.group);
   }
 
-  takeDamage(amount, knockbackDir) {
+  takeDamage(amount) {
     this.health -= amount;
     this.hurtTimer = 0.2;
     audioManager.playHurt();
 
-    // Knockback
-    if (knockbackDir) {
-      this.velocity.x += knockbackDir.x * 6;
-      this.velocity.y += 3.5;
-      this.velocity.z += knockbackDir.z * 6;
+    if (this.game.particles) {
+      this.game.particles.emitDamage(this.position.x, this.position.y + 0.5, this.position.z, 8);
     }
 
     if (this.health <= 0) {
@@ -191,20 +213,32 @@ export class Mob {
   }
 
   die() {
+    if (this.isDead) return;
     this.isDead = true;
-    // Spawn drops
+
+    if (this.game.particles) {
+      this.game.particles.emitDamage(this.position.x, this.position.y + 0.6, this.position.z, 16);
+    }
+
+    // Drops & XP
     if (this.type === MOB_TYPES.BOAR) {
       this.game.spawnDroppedItem(this.position.x, this.position.y + 0.5, this.position.z, 'raw_meat', 2);
+      this.game.player.addXP(3);
     } else if (this.type === MOB_TYPES.STAG) {
       this.game.spawnDroppedItem(this.position.x, this.position.y + 0.5, this.position.z, 'raw_meat', 3);
+      this.game.player.addXP(4);
+    } else if (this.type === MOB_TYPES.MEADOWBIRD) {
+      this.game.spawnDroppedItem(this.position.x, this.position.y + 0.3, this.position.z, 'seeds_wheat', 1);
+      this.game.player.addXP(2);
     } else if (this.type === MOB_TYPES.SHADOW_STALKER) {
       this.game.spawnDroppedItem(this.position.x, this.position.y + 0.5, this.position.z, 'coal', 2);
-      this.game.player.addXP(5);
+      this.game.player.addXP(6);
+    } else if (this.type === MOB_TYPES.CAVERN_LURKER) {
+      this.game.spawnDroppedItem(this.position.x, this.position.y + 0.5, this.position.z, 'raw_iron', 2);
+      this.game.player.addXP(7);
     } else if (this.type === MOB_TYPES.BONE_ARCHER) {
       this.game.spawnDroppedItem(this.position.x, this.position.y + 0.5, this.position.z, 'stick', 2);
       this.game.player.addXP(4);
-    } else if (this.type === MOB_TYPES.TOXIC_SPORE) {
-      this.game.player.addXP(5);
     }
 
     this.dispose();
@@ -217,15 +251,22 @@ export class Mob {
       this.attackCooldown -= delta;
     }
 
-    // Hurt flash visual
+    // Hurt flash restore
     if (this.hurtTimer > 0) {
       this.hurtTimer -= delta;
       this.group.traverse((c) => {
         if (c.material && c.material.color) c.material.color.setHex(0xff2222);
       });
+    } else {
+      this.originalColors.forEach((color, mesh) => {
+        if (mesh.material && mesh.material.color) mesh.material.color.setHex(color);
+      });
     }
 
     const distToPlayer = this.position.distanceTo(player.position);
+
+    // Distance LOD optimization: tick simplified logic if far away
+    if (distToPlayer > 45.0) return;
 
     // AI Decision Tree
     if (this.isHostile && distToPlayer < 16.0) {
@@ -252,14 +293,11 @@ export class Mob {
       if (this.type === MOB_TYPES.TOXIC_SPORE && distToPlayer < 2.5) {
         this.fuse += delta;
         if (this.fuse > 1.4) {
-          // Detonate!
           audioManager.playExplosion();
           player.takeDamage(8);
           this.die();
           return;
         }
-      } else if (this.type === MOB_TYPES.TOXIC_SPORE) {
-        this.fuse = Math.max(0, this.fuse - delta);
       }
 
       // Melee attack
@@ -288,12 +326,12 @@ export class Mob {
       this.position.y = nextY;
     }
 
-    // Auto-jump over 1 block obstacles while moving
+    // Auto-jump over 1-block obstacles while moving
     const forwardX = this.position.x + Math.sin(this.rotationY) * 0.6;
     const forwardZ = this.position.z + Math.cos(this.rotationY) * 0.6;
     const obstacle = this.world.getBlock(Math.floor(forwardX), Math.floor(this.position.y + 0.4), Math.floor(forwardZ));
     if (obstacle !== 0 && this.velocity.y === 0) {
-      this.velocity.y = 6.5; // Jump
+      this.velocity.y = 6.5; // Jump over obstacle
     }
 
     this.position.x += this.velocity.x * delta;
@@ -341,7 +379,6 @@ export class MobManager {
   }
 
   update(delta, player) {
-    // 1. Update active mobs
     for (let i = this.mobs.length - 1; i >= 0; i--) {
       const mob = this.mobs[i];
       if (mob.isDead) {
@@ -350,16 +387,16 @@ export class MobManager {
       }
       mob.update(delta, player);
 
-      // Despawn distant mobs (> 60 blocks from player)
-      if (mob.position.distanceTo(player.position) > 60.0) {
+      // Despawn distant mobs (> 55 blocks from player)
+      if (mob.position.distanceTo(player.position) > 55.0) {
         mob.dispose();
         this.mobs.splice(i, 1);
       }
     }
 
-    // 2. Periodic natural spawning
+    // Periodic natural spawning
     this.spawnTimer += delta;
-    if (this.spawnTimer > 4.0 && this.mobs.length < this.maxMobs) {
+    if (this.spawnTimer > 4.5 && this.mobs.length < this.maxMobs) {
       this.spawnTimer = 0;
       this.trySpawnAroundPlayer(player);
     }
@@ -367,21 +404,21 @@ export class MobManager {
 
   trySpawnAroundPlayer(player) {
     const angle = Math.random() * Math.PI * 2;
-    const dist = 18 + Math.random() * 22; // Spawn 18 to 40 blocks away
+    const dist = 20 + Math.random() * 20;
     const sx = Math.floor(player.position.x + Math.cos(angle) * dist);
     const sz = Math.floor(player.position.z + Math.sin(angle) * dist);
 
     const { height } = this.game.world.generator.getTerrainData(sx, sz);
-    if (height < 25) return; // Don't spawn underwater
+    if (height < 25) return;
 
     const isNight = (this.game.sky.time > 13000 || this.game.sky.time < 23000);
 
     let type;
     if (isNight) {
-      const hostiles = [MOB_TYPES.SHADOW_STALKER, MOB_TYPES.BONE_ARCHER, MOB_TYPES.TOXIC_SPORE];
+      const hostiles = [MOB_TYPES.SHADOW_STALKER, MOB_TYPES.BONE_ARCHER, MOB_TYPES.TOXIC_SPORE, MOB_TYPES.CAVERN_LURKER];
       type = hostiles[Math.floor(Math.random() * hostiles.length)];
     } else {
-      const passives = [MOB_TYPES.BOAR, MOB_TYPES.STAG, MOB_TYPES.RAM];
+      const passives = [MOB_TYPES.BOAR, MOB_TYPES.STAG, MOB_TYPES.RAM, MOB_TYPES.MEADOWBIRD];
       type = passives[Math.floor(Math.random() * passives.length)];
     }
 

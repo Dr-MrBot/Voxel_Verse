@@ -103,13 +103,14 @@ Voxel Verse features custom skeletal and procedural animations that bring every 
 | **Left Click (Hold)** | Mine blocks / Attack creatures |
 | **Right Click** | Place blocks / Open chests / Open doors / Eat food |
 | **Space** | Jump / Swim up *(Fly upward in Creative Mode)* |
-| **Shift** | Sneak / Sprint *(Fly downward in Creative Mode)* |
+| **Shift** | Sneak with Ledge Protection / Sprint *(Fly downward in Creative Mode)* |
 | **E** | Open Inventory & Crafting *(Survival)* / Open Item Catalog *(Creative)* |
 | **F5** | Switch between First-Person and Third-Person Camera |
+| **F3** | Toggle Real-time Performance & Coordinate Debug Overlay |
 | **F** | Toggle Flying on/off *(Creative Mode only)* |
 | **Q** | Drop held item onto the ground |
 | **1 – 9 Keys** | Select items in your hotbar |
-| **Mouse Wheel** | Scroll through hotbar items |
+| **Mouse Wheel** | Scroll hotbar items *(Hold Right-Click to Zoom 3rd Person camera)* |
 | **Top Corner Button / F11** | Toggle Full Screen Mode |
 | **Esc** | Pause game / Open options menu |
 

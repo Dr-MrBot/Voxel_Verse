@@ -36,7 +36,7 @@ export class InventoryUI {
     if (this.cursorItem && this.cursorItem.count > 0) {
       const def = itemRegistry.get(this.cursorItem.id);
       this.cursorEl.innerHTML = `
-        <span style="color: ${def ? def.color : '#fff'}">${def ? (def.iconChar || '📦') : '📦'}</span>
+        <span style="color: ${def ? def.color : '#fff'}; font-size: 20px;">${def ? (def.iconChar || '📦') : '📦'}</span>
         <span class="slot-count">${this.cursorItem.count > 1 ? this.cursorItem.count : ''}</span>
       `;
       this.cursorEl.style.display = 'flex';
@@ -92,19 +92,22 @@ export class InventoryUI {
         <div class="slot-icon" style="color: ${def ? def.color : '#fff'}">${def ? (def.iconChar || '📦') : '📦'}</div>
         <span class="slot-count">${item.count > 1 ? item.count : ''}</span>
       `;
+      slot.title = def ? def.name : 'Item';
     }
 
     slot.addEventListener('mousedown', (e) => {
       e.preventDefault();
-      onClick(e.button === 2); // true if right click
+      const isRightClick = (e.button === 2);
+      const isShiftClick = e.shiftKey;
+      onClick(isRightClick, isShiftClick);
       this.render();
     });
 
     return slot;
   }
 
-  // Handle slot interaction (Left/Right click with cursor)
-  handleSlotClick(slotOwner, slotIndex, isRightClick) {
+  // Handle slot interaction (Left / Right / Shift click with cursor)
+  handleSlotClick(slotOwner, slotIndex, isRightClick, isShiftClick) {
     const getItem = () => {
       if (slotOwner === 'player') return this.game.player.inventory[slotIndex];
       if (slotOwner === 'craft2x2') return this.craftGrid2x2[slotIndex];
@@ -127,6 +130,55 @@ export class InventoryUI {
     };
 
     const current = getItem();
+
+    // 1. Shift-Click Quick Transfer
+    if (isShiftClick && current && !this.cursorItem) {
+      if (slotOwner === 'player') {
+        if (slotIndex < 9) {
+          // Hotbar -> Main Inventory (9-35)
+          for (let i = 9; i < 36; i++) {
+            if (!this.game.player.inventory[i]) {
+              this.game.player.inventory[i] = current;
+              setItem(null);
+              audioManager.playPop();
+              return;
+            }
+          }
+        } else {
+          // Main Inventory -> Hotbar (0-8)
+          for (let i = 0; i < 9; i++) {
+            if (!this.game.player.inventory[i]) {
+              this.game.player.inventory[i] = current;
+              setItem(null);
+              audioManager.playPop();
+              return;
+            }
+          }
+        }
+
+        // If Chest is open: Player -> Chest
+        if (this.activeContainerType === 'chest' && this.activeContainerData) {
+          for (let i = 0; i < this.activeContainerData.items.length; i++) {
+            if (!this.activeContainerData.items[i]) {
+              this.activeContainerData.items[i] = current;
+              setItem(null);
+              audioManager.playPop();
+              return;
+            }
+          }
+        }
+      } else if (slotOwner === 'chest' && this.activeContainerData) {
+        // Chest -> Player
+        const added = this.game.player.addItem(current.id, current.count);
+        if (added === current.count) {
+          setItem(null);
+        } else {
+          current.count -= added;
+        }
+        audioManager.playPop();
+        return;
+      }
+    }
 
     // Furnace output slot is take-only
     if (slotOwner === 'furnace_out') {
@@ -209,7 +261,7 @@ export class InventoryUI {
     } else if (this.cursorItem.id === match.output.id) {
       this.cursorItem.count += match.output.count;
     } else {
-      return; // Cannot take if holding different item
+      return;
     }
 
     // Consume 1 of each ingredient in the grid
@@ -240,146 +292,110 @@ export class InventoryUI {
     header.querySelector('.close-btn').addEventListener('click', () => this.close());
     modal.appendChild(header);
 
-    const body = document.createElement('div');
-    body.className = 'modal-body';
-
-    // Top section: Container specific (Chest / Furnace / Crafting Table / 2x2 Crafting)
-    const topSection = document.createElement('div');
-    topSection.className = 'container-top-section';
-
+    // Top Workstation Area
     if (this.activeContainerType === 'chest') {
-      // 27 Chest Slots (3x9)
-      const chestGrid = document.createElement('div');
-      chestGrid.className = 'inv-grid chest-grid';
-      for (let i = 0; i < 27; i++) {
-        chestGrid.appendChild(this.createSlot(this.activeContainerData.items[i], (rc) => {
-          this.handleSlotClick('chest', i, rc);
-        }));
+      const chestSection = document.createElement('div');
+      chestSection.className = 'chest-section';
+      const grid = document.createElement('div');
+      grid.className = 'chest-grid';
+      for (let i = 0; i < this.activeContainerData.items.length; i++) {
+        const item = this.activeContainerData.items[i];
+        grid.appendChild(this.createSlot(item, (r, s) => this.handleSlotClick('chest', i, r, s)));
       }
-      topSection.appendChild(chestGrid);
+      chestSection.appendChild(grid);
+      modal.appendChild(chestSection);
     } else if (this.activeContainerType === 'furnace') {
-      // Furnace: Input, Fuel, Output
-      const furnaceBox = document.createElement('div');
-      furnaceBox.className = 'furnace-container';
+      const fSection = document.createElement('div');
+      fSection.className = 'furnace-section';
+      const inputSlot = this.createSlot(this.activeContainerData.input, (r, s) => this.handleSlotClick('furnace_in', 0, r, s));
+      const fuelSlot = this.createSlot(this.activeContainerData.fuel, (r, s) => this.handleSlotClick('furnace_fuel', 0, r, s));
+      const outSlot = this.createSlot(this.activeContainerData.output, (r, s) => this.handleSlotClick('furnace_out', 0, r, s));
 
-      const leftCol = document.createElement('div');
-      leftCol.className = 'furnace-left';
-      leftCol.appendChild(this.createSlot(this.activeContainerData.input, (rc) => {
-        this.handleSlotClick('furnace_in', 0, rc);
-      }));
-
-      const flame = document.createElement('div');
-      flame.className = `furnace-flame ${this.activeContainerData.burnTime > 0 ? 'active' : ''}`;
-      flame.innerHTML = '🔥';
-      leftCol.appendChild(flame);
-
-      leftCol.appendChild(this.createSlot(this.activeContainerData.fuel, (rc) => {
-        this.handleSlotClick('furnace_fuel', 0, rc);
-      }));
-
-      const arrow = document.createElement('div');
-      arrow.className = 'furnace-arrow';
-      const pct = (this.activeContainerData.cookTime / this.activeContainerData.maxCookTime) * 100;
-      arrow.innerHTML = `<span style="font-size: 24px;">➡️</span><div class="cook-bar" style="width:${pct}%"></div>`;
-
-      const rightCol = document.createElement('div');
-      rightCol.className = 'furnace-right';
-      rightCol.appendChild(this.createSlot(this.activeContainerData.output, (rc) => {
-        this.handleSlotClick('furnace_out', 0, rc);
-      }));
-
-      furnaceBox.appendChild(leftCol);
-      furnaceBox.appendChild(arrow);
-      furnaceBox.appendChild(rightCol);
-      topSection.appendChild(furnaceBox);
+      fSection.innerHTML = `
+        <div class="furnace-slots-left">
+          <div class="slot-label">Input</div>
+          <div class="f-in-holder"></div>
+          <div class="slot-label">Fuel</div>
+          <div class="f-fuel-holder"></div>
+        </div>
+        <div class="furnace-progress-arrow">➔</div>
+        <div class="furnace-slots-right">
+          <div class="slot-label">Output</div>
+          <div class="f-out-holder"></div>
+        </div>
+      `;
+      fSection.querySelector('.f-in-holder').appendChild(inputSlot);
+      fSection.querySelector('.f-fuel-holder').appendChild(fuelSlot);
+      fSection.querySelector('.f-out-holder').appendChild(outSlot);
+      modal.appendChild(fSection);
     } else if (this.activeContainerType === 'crafting_table') {
-      // 3x3 Crafting Table
-      const craftWrap = document.createElement('div');
-      craftWrap.className = 'crafting-wrapper';
-
-      const grid3x3 = document.createElement('div');
-      grid3x3.className = 'craft-grid-3x3';
+      const cSection = document.createElement('div');
+      cSection.className = 'crafting-3x3-section';
+      const grid = document.createElement('div');
+      grid.className = 'crafting-3x3-grid';
       for (let i = 0; i < 9; i++) {
-        grid3x3.appendChild(this.createSlot(this.craftGrid3x3[i], (rc) => {
-          this.handleSlotClick('craft3x3', i, rc);
-        }));
+        grid.appendChild(this.createSlot(this.craftGrid3x3[i], (r, s) => this.handleSlotClick('craft3x3', i, r, s)));
       }
-
-      const arrow = document.createElement('div');
-      arrow.className = 'craft-arrow';
-      arrow.innerHTML = '➡️';
 
       const match = recipeRegistry.findMatch(this.craftGrid3x3, 3, 3);
-      const outputSlot = this.createSlot(match ? match.output : null, () => {
-        this.handleCraftExtract(this.craftGrid3x3, 3);
-      });
-      outputSlot.classList.add('craft-output-slot');
+      const outSlot = this.createSlot(match ? match.output : null, () => this.handleCraftExtract(this.craftGrid3x3, 3));
 
-      craftWrap.appendChild(grid3x3);
-      craftWrap.appendChild(arrow);
-      craftWrap.appendChild(outputSlot);
-      topSection.appendChild(craftWrap);
-    } else {
-      // 2x2 Player Crafting
-      const craftWrap = document.createElement('div');
-      craftWrap.className = 'crafting-wrapper 2x2';
-
-      const grid2x2 = document.createElement('div');
-      grid2x2.className = 'craft-grid-2x2';
-      for (let i = 0; i < 4; i++) {
-        grid2x2.appendChild(this.createSlot(this.craftGrid2x2[i], (rc) => {
-          this.handleSlotClick('craft2x2', i, rc);
-        }));
-      }
-
+      cSection.appendChild(grid);
       const arrow = document.createElement('div');
       arrow.className = 'craft-arrow';
-      arrow.innerHTML = '➡️';
+      arrow.textContent = '➔';
+      cSection.appendChild(arrow);
+      cSection.appendChild(outSlot);
+      modal.appendChild(cSection);
+    } else {
+      // 2x2 Crafting in Player Inventory
+      const c2Section = document.createElement('div');
+      c2Section.className = 'crafting-2x2-section';
+      const grid = document.createElement('div');
+      grid.className = 'crafting-2x2-grid';
+      for (let i = 0; i < 4; i++) {
+        grid.appendChild(this.createSlot(this.craftGrid2x2[i], (r, s) => this.handleSlotClick('craft2x2', i, r, s)));
+      }
 
       const match = recipeRegistry.findMatch(this.craftGrid2x2, 2, 2);
-      const outputSlot = this.createSlot(match ? match.output : null, () => {
-        this.handleCraftExtract(this.craftGrid2x2, 2);
-      });
-      outputSlot.classList.add('craft-output-slot');
+      const outSlot = this.createSlot(match ? match.output : null, () => this.handleCraftExtract(this.craftGrid2x2, 2));
 
-      craftWrap.appendChild(grid2x2);
-      craftWrap.appendChild(arrow);
-      craftWrap.appendChild(outputSlot);
-      topSection.appendChild(craftWrap);
+      c2Section.appendChild(grid);
+      const arrow = document.createElement('div');
+      arrow.className = 'craft-arrow';
+      arrow.textContent = '➔';
+      c2Section.appendChild(arrow);
+      c2Section.appendChild(outSlot);
+      modal.appendChild(c2Section);
     }
 
-    body.appendChild(topSection);
+    // Divider
+    const div = document.createElement('div');
+    div.className = 'inv-section-title';
+    div.textContent = 'Player Inventory';
+    modal.appendChild(div);
 
-    // Player Inventory: 27 storage slots (indices 9-35)
-    const invLabel = document.createElement('h3');
-    invLabel.textContent = 'Inventory';
-    body.appendChild(invLabel);
-
-    const playerGrid = document.createElement('div');
-    playerGrid.className = 'inv-grid player-grid';
+    // Main Inventory (27 slots: 9 to 35)
+    const mainGrid = document.createElement('div');
+    mainGrid.className = 'player-main-grid';
     for (let i = 9; i < 36; i++) {
-      playerGrid.appendChild(this.createSlot(this.game.player.inventory[i], (rc) => {
-        this.handleSlotClick('player', i, rc);
-      }));
+      mainGrid.appendChild(this.createSlot(this.game.player.inventory[i], (r, s) => this.handleSlotClick('player', i, r, s)));
     }
-    body.appendChild(playerGrid);
+    modal.appendChild(mainGrid);
 
-    // Player Hotbar: 9 slots (indices 0-8)
-    const hotbarLabel = document.createElement('h3');
-    hotbarLabel.textContent = 'Hotbar';
-    body.appendChild(hotbarLabel);
+    // Hotbar (9 slots: 0 to 8)
+    const hotbarTitle = document.createElement('div');
+    hotbarTitle.className = 'inv-section-title';
+    hotbarTitle.textContent = 'Hotbar';
+    modal.appendChild(hotbarTitle);
 
     const hotbarGrid = document.createElement('div');
-    hotbarGrid.className = 'inv-grid hotbar-grid';
+    hotbarGrid.className = 'player-hotbar-grid';
     for (let i = 0; i < 9; i++) {
-      hotbarGrid.appendChild(this.createSlot(this.game.player.inventory[i], (rc) => {
-        this.handleSlotClick('player', i, rc);
-      }));
+      hotbarGrid.appendChild(this.createSlot(this.game.player.inventory[i], (r, s) => this.handleSlotClick('player', i, r, s)));
     }
-    body.appendChild(hotbarGrid);
+    modal.appendChild(hotbarGrid);
 
-    modal.appendChild(body);
     this.container.appendChild(modal);
-    this.updateCursorDisplay();
   }
 }

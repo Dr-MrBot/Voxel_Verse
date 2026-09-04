@@ -11,6 +11,7 @@ export class BlockInteractions {
     this.player = player;
 
     this.target = null;
+    this.targetedBlockDef = null;
     this.breakProgress = 0; // 0 to 1
     this.breakingBlock = null;
     this.hitSoundTimer = 0;
@@ -18,22 +19,43 @@ export class BlockInteractions {
     this.creativeBreakCooldown = 0;
 
     this.initSelectionBox();
+    this.initGhostBox();
     this.initCrackOverlay();
   }
 
   initSelectionBox() {
-    const geo = new THREE.BoxGeometry(1.002, 1.002, 1.002);
+    const geo = new THREE.BoxGeometry(1.004, 1.004, 1.004);
     const edges = new THREE.EdgesGeometry(geo);
-    const mat = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+    const mat = new THREE.LineBasicMaterial({
+      color: 0x000000,
+      linewidth: 2,
+      depthTest: true,
+      transparent: true,
+      opacity: 0.85,
+    });
     this.selectionBox = new THREE.LineSegments(edges, mat);
     this.selectionBox.visible = false;
     this.scene.add(this.selectionBox);
   }
 
-  initCrackOverlay() {
-    const geo = new THREE.BoxGeometry(1.004, 1.004, 1.004);
+  initGhostBox() {
+    // Holographic placement preview box
+    const geo = new THREE.BoxGeometry(1.001, 1.001, 1.001);
     const mat = new THREE.MeshBasicMaterial({
-      color: 0x000000,
+      color: 0x00e5ff,
+      transparent: true,
+      opacity: 0.35,
+      depthWrite: false,
+    });
+    this.ghostBox = new THREE.Mesh(geo, mat);
+    this.ghostBox.visible = false;
+    this.scene.add(this.ghostBox);
+  }
+
+  initCrackOverlay() {
+    const geo = new THREE.BoxGeometry(1.006, 1.006, 1.006);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0x111111,
       wireframe: true,
       transparent: true,
       opacity: 0.0,
@@ -53,13 +75,37 @@ export class BlockInteractions {
     const origin = this.player.camera.position.clone();
     const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(this.player.camera.quaternion);
 
-    const hit = this.player.physics.raycast(origin, dir, 5.0);
+    const hit = this.player.physics.raycast(origin, dir, 5.2);
     this.target = hit;
 
     if (hit.hit) {
       this.targetedBlockDef = blockRegistry.get(hit.blockId);
       this.selectionBox.position.set(hit.blockX + 0.5, hit.blockY + 0.5, hit.blockZ + 0.5);
       this.selectionBox.visible = true;
+
+      // Update placement ghost preview
+      const selectedItem = this.player.getSelectedItem();
+      const itemDef = selectedItem ? itemRegistry.get(selectedItem.id) : null;
+      if (itemDef && itemDef.isBlock) {
+        const px = hit.placeX;
+        const py = hit.placeY;
+        const pz = hit.placeZ;
+
+        // Check collision with player
+        const playerBox = this.player.physics.getPlayerAABB(this.player.position);
+        const newBlockBox = new THREE.Box3(
+          new THREE.Vector3(px, py, pz),
+          new THREE.Vector3(px + 1, py + 1, pz + 1)
+        );
+        const intersectsPlayer = playerBox.intersectsBox(newBlockBox);
+
+        this.ghostBox.position.set(px + 0.5, py + 0.5, pz + 0.5);
+        this.ghostBox.material.color.setHex(intersectsPlayer ? 0xff3333 : 0x00e5ff);
+        this.ghostBox.material.opacity = intersectsPlayer ? 0.25 : 0.35;
+        this.ghostBox.visible = true;
+      } else {
+        this.ghostBox.visible = false;
+      }
 
       // Handle mining (Left Click hold)
       if (input.mouseButtons.left) {
@@ -76,6 +122,7 @@ export class BlockInteractions {
       this.target = null;
       this.targetedBlockDef = null;
       this.selectionBox.visible = false;
+      this.ghostBox.visible = false;
       this.resetMining();
     }
   }
@@ -92,10 +139,10 @@ export class BlockInteractions {
     const blockDef = blockRegistry.get(hit.blockId);
     if (blockDef.hardness < 0) return; // Bedrock is unbreakable
 
-    // Creative mode: Instant Break with controlled 0.22s cooldown per block
+    // Creative mode: Instant Break with controlled 0.20s cooldown per block
     if (this.player.gameMode === 'creative') {
       if (this.creativeBreakCooldown <= 0) {
-        this.creativeBreakCooldown = 0.22;
+        this.creativeBreakCooldown = 0.20;
         this.player.model.triggerSwing();
         this.breakBlock(hit, blockDef, false);
         this.resetMining();
@@ -137,10 +184,6 @@ export class BlockInteractions {
       }
     }
 
-    // Realistic physics-based break time calculation:
-    // Dirt: ~0.9s bare hands, ~0.25s with shovel
-    // Wood logs: ~2.8s bare hands, ~1.4s wooden axe, ~0.7s stone axe
-    // Stone: ~6.5s bare hands (no drop), ~1.6s wooden pickaxe, ~0.8s stone pickaxe
     const baseMultiplier = (blockDef.toolType === 'pickaxe' && (!selectedItem || itemRegistry.get(selectedItem.id)?.toolType !== 'pickaxe')) ? 2.2 : 1.5;
     const breakTime = Math.max(0.2, (blockDef.hardness * baseMultiplier) / speedMultiplier);
 
@@ -156,13 +199,18 @@ export class BlockInteractions {
     // Progressive cracking overlay
     this.crackMesh.position.set(hit.blockX + 0.5, hit.blockY + 0.5, hit.blockZ + 0.5);
     this.crackMesh.visible = true;
-    this.crackMesh.material.opacity = Math.min(0.85, Math.max(0.15, this.breakProgress * 0.9));
+    this.crackMesh.material.opacity = Math.min(0.88, Math.max(0.18, this.breakProgress * 0.92));
 
-    // Rhythmic chipping sounds every 0.28 seconds
+    // Rhythmic chipping sounds & hit particles every 0.26 seconds
     this.hitSoundTimer -= delta;
     if (this.hitSoundTimer <= 0) {
-      this.hitSoundTimer = 0.28;
+      this.hitSoundTimer = 0.26;
       audioManager.playBreak(blockDef.sound);
+
+      if (this.game.particles) {
+        const color = blockDef.sound === 'wood' ? 0x8b5a2b : (blockDef.sound === 'grass' ? 0x55a52d : 0x808080);
+        this.game.particles.emitBlockHit(hit.blockX, hit.blockY, hit.blockZ, color, 4);
+      }
     }
 
     if (this.breakProgress >= 1.0) {
@@ -174,6 +222,12 @@ export class BlockInteractions {
 
   breakBlock(hit, blockDef, canHarvest) {
     audioManager.playBreak(blockDef.sound);
+
+    // Particle burst
+    if (this.game.particles) {
+      const color = blockDef.sound === 'wood' ? 0x8b5a2b : (blockDef.sound === 'grass' ? 0x55a52d : 0x808080);
+      this.game.particles.emitBlockBreak(hit.blockX, hit.blockY, hit.blockZ, color, 16);
+    }
 
     // Remove block from world
     this.world.setBlock(hit.blockX, hit.blockY, hit.blockZ, BLOCK.AIR);
@@ -211,7 +265,7 @@ export class BlockInteractions {
           if (selectedItem.durability <= 0) {
             // Tool broke!
             this.player.consumeSelectedItem();
-            audioManager.playBreak('glass');
+            audioManager.playToolBreak();
             this.game.ui.showNotification(`Your ${itemDef.name} broke!`);
           }
         }
@@ -226,16 +280,19 @@ export class BlockInteractions {
     // 1. Interactive Block Clicks
     if (hit.blockId === BLOCK.CRAFTING_TABLE) {
       this.game.openCraftingTable();
+      audioManager.playChest(true);
       return;
     }
 
     if (hit.blockId === BLOCK.FURNACE || hit.blockId === BLOCK.FURNACE_ACTIVE) {
       this.game.openFurnace(hit.blockX, hit.blockY, hit.blockZ);
+      audioManager.playChest(true);
       return;
     }
 
     if (hit.blockId === BLOCK.CHEST) {
       this.game.openChest(hit.blockX, hit.blockY, hit.blockZ);
+      audioManager.playChest(true);
       return;
     }
 
@@ -268,6 +325,9 @@ export class BlockInteractions {
         this.world.setBlock(hit.blockX, hit.blockY, hit.blockZ, BLOCK.FARMLAND);
         audioManager.playBreak('dirt');
         this.player.model.triggerSwing();
+        if (this.game.particles) {
+          this.game.particles.emitBlockHit(hit.blockX, hit.blockY, hit.blockZ, 0x825532, 6);
+        }
         return;
       }
     }
@@ -291,11 +351,10 @@ export class BlockInteractions {
     // 4. Food eating
     if (itemDef && itemDef.isFood) {
       if (this.player.gameMode === 'creative' || this.player.hunger < 20) {
-        this.player.eatFood(itemDef.nutrition);
+        this.player.feed(itemDef.nutrition);
         if (this.player.gameMode !== 'creative') {
           this.player.consumeSelectedItem();
         }
-        audioManager.playEat();
         return;
       }
     }
@@ -324,6 +383,11 @@ export class BlockInteractions {
       }
       this.player.model.triggerSwing();
       audioManager.playPlace(placeBlockDef.sound);
+
+      if (this.game.particles) {
+        const color = placeBlockDef.sound === 'wood' ? 0x8b5a2b : (placeBlockDef.sound === 'grass' ? 0x55a52d : 0x808080);
+        this.game.particles.emitBlockPlace(px, py, pz, color, 8);
+      }
     }
   }
 }

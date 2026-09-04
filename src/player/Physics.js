@@ -6,9 +6,9 @@ export class Physics {
     this.world = world;
     this.gravity = -28.0;
     this.terminalVelocity = -55.0;
-    this.waterGravity = -6.0;
-    this.waterTerminalVel = -8.0;
-    this.stepHeight = 0.55; // Auto-step up 0.5 blocks
+    this.waterGravity = -5.0;
+    this.waterTerminalVel = -7.0;
+    this.stepHeight = 0.58; // Smooth auto-step up 0.5 blocks (slabs/stairs/hills)
   }
 
   // Get bounding box of player at position (pos.y is feet position)
@@ -34,9 +34,9 @@ export class Physics {
       for (let y = minY; y <= maxY; y++) {
         for (let z = minZ; z <= maxZ; z++) {
           const b = this.world.getBlock(x, y, z);
-          if (b !== BLOCK.AIR) {
+          if (b !== BLOCK.AIR && b !== BLOCK.WATER) {
             const def = blockRegistry.get(b);
-            if (def.solid) {
+            if (def && def.solid) {
               blocks.push(new THREE.Box3(
                 new THREE.Vector3(x, y, z),
                 new THREE.Vector3(x + 1, y + 1, z + 1)
@@ -49,20 +49,31 @@ export class Physics {
     return blocks;
   }
 
+  // Check if there is solid ground beneath an AABB (used for ledge sneak protection)
+  hasGroundBeneath(pos, width = 0.6) {
+    const halfW = width / 2;
+    const testAABB = new THREE.Box3(
+      new THREE.Vector3(pos.x - halfW, pos.y - 0.4, pos.z - halfW),
+      new THREE.Vector3(pos.x + halfW, pos.y, pos.z + halfW)
+    );
+    const intersecting = this.getIntersectingBlocks(testAABB);
+    return intersecting.length > 0;
+  }
+
   // Check if player position is in water
   isInWater(pos, height = 1.8) {
     const feetBlock = this.world.getBlock(Math.floor(pos.x), Math.floor(pos.y), Math.floor(pos.z));
-    const waistBlock = this.world.getBlock(Math.floor(pos.x), Math.floor(pos.y + 0.9), Math.floor(pos.z));
-    const headBlock = this.world.getBlock(Math.floor(pos.x), Math.floor(pos.y + 1.6), Math.floor(pos.z));
+    const waistBlock = this.world.getBlock(Math.floor(pos.x), Math.floor(pos.y + 0.8), Math.floor(pos.z));
+    const headBlock = this.world.getBlock(Math.floor(pos.x), Math.floor(pos.y + 1.5), Math.floor(pos.z));
     return (feetBlock === BLOCK.WATER || waistBlock === BLOCK.WATER || headBlock === BLOCK.WATER);
   }
 
   isHeadInWater(pos) {
-    return this.world.getBlock(Math.floor(pos.x), Math.floor(pos.y + 1.6), Math.floor(pos.z)) === BLOCK.WATER;
+    return this.world.getBlock(Math.floor(pos.x), Math.floor(pos.y + 1.5), Math.floor(pos.z)) === BLOCK.WATER;
   }
 
-  // Move player with swept AABB collision and auto step-up
-  move(pos, velocity, delta, isFlying = false, width = 0.6, height = 1.8) {
+  // Move player with swept AABB collision, ledge crouching, and auto step-up
+  move(pos, velocity, delta, isFlying = false, isSneaking = false, width = 0.6, height = 1.8) {
     const inWater = this.isInWater(pos, height);
 
     // Apply gravity (unless flying in Creative mode)
@@ -70,8 +81,8 @@ export class Physics {
       if (inWater) {
         velocity.y += this.waterGravity * delta;
         velocity.y = Math.max(velocity.y, this.waterTerminalVel);
-        velocity.x *= 0.85;
-        velocity.z *= 0.85;
+        velocity.x *= 0.88;
+        velocity.z *= 0.88;
       } else {
         velocity.y += this.gravity * delta;
         velocity.y = Math.max(velocity.y, this.terminalVelocity);
@@ -79,7 +90,6 @@ export class Physics {
     }
 
     const moveDelta = velocity.clone().multiplyScalar(delta);
-
     let onGround = false;
 
     // 1. Move on Y axis
@@ -108,9 +118,17 @@ export class Physics {
       onGround = true;
     }
 
-    // 2. Move on X axis with Step-Up
+    // 2. Move on X axis with Ledge Sneak Protection and Step-Up
     const prevX = pos.x;
     pos.x += moveDelta.x;
+
+    // Sneak ledge protection on X
+    if (isSneaking && onGround && !isFlying) {
+      if (!this.hasGroundBeneath(pos, width)) {
+        pos.x = prevX;
+      }
+    }
+
     aabb = this.getPlayerAABB(pos, width, height);
     collisions = this.getIntersectingBlocks(aabb);
 
@@ -133,9 +151,17 @@ export class Physics {
       }
     }
 
-    // 3. Move on Z axis with Step-Up
+    // 3. Move on Z axis with Ledge Sneak Protection and Step-Up
     const prevZ = pos.z;
     pos.z += moveDelta.z;
+
+    // Sneak ledge protection on Z
+    if (isSneaking && onGround && !isFlying) {
+      if (!this.hasGroundBeneath(pos, width)) {
+        pos.z = prevZ;
+      }
+    }
+
     aabb = this.getPlayerAABB(pos, width, height);
     collisions = this.getIntersectingBlocks(aabb);
 
@@ -220,5 +246,20 @@ export class Physics {
     }
 
     return { hit: false };
+  }
+
+  // Camera raycast for Third-Person view to prevent camera clipping inside blocks/walls
+  raycastCamera(origin, targetPos, radius = 0.15) {
+    const dir = targetPos.clone().sub(origin);
+    const maxDist = dir.length();
+    if (maxDist < 0.01) return targetPos;
+    dir.normalize();
+
+    const hit = this.raycast(origin, dir, maxDist);
+    if (hit && hit.hit) {
+      const safeDist = Math.max(0.4, hit.distance - radius);
+      return origin.clone().add(dir.multiplyScalar(safeDist));
+    }
+    return targetPos;
   }
 }

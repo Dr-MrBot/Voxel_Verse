@@ -11,11 +11,28 @@ export class MenuUI {
 
   initElements() {
     this.container.innerHTML = `
+      <!-- 0. Animated Loading Screen -->
+      <div id="loading-screen" class="menu-screen">
+        <div class="loading-box">
+          <div class="logo-box">
+            <h1 class="game-logo">VOXEL VERSE</h1>
+            <p class="game-subtitle">VOXEL ODYSSEY</p>
+          </div>
+          <div class="loading-bar-wrapper">
+            <div id="loading-bar-fill" class="loading-bar-fill" style="width: 0%;"></div>
+          </div>
+          <div id="loading-status-text" class="loading-status">Generating procedural terrain...</div>
+          <div class="loading-dev-tag">
+            Developer: <strong>MOHAMMAD FAHAD</strong>
+          </div>
+        </div>
+      </div>
+
       <!-- 1. Title Screen -->
       <div id="title-screen" class="menu-screen active">
         <div class="logo-box">
-          <h1 class="game-logo">BLOCK REALMS</h1>
-          <p class="game-subtitle">VOXEL ODYSSEY</p>
+          <h1 class="game-logo">VOXEL VERSE</h1>
+          <p class="game-subtitle">3D VOXEL SURVIVAL ODYSSEY</p>
         </div>
         <div class="menu-buttons">
           <button id="btn-play-new" class="btn-primary">NEW WORLD</button>
@@ -25,17 +42,17 @@ export class MenuUI {
           <button id="btn-credits" class="btn-secondary">CREDITS / ABOUT</button>
         </div>
         <div class="version-tag">
-          Developed by <strong>MOHAMMAD FAHAD</strong> • Pure WebGL & Web Audio • v1.2.0
+          Developed by <strong>MOHAMMAD FAHAD</strong> • Three.js WebGL & Web Audio • v1.2.0
         </div>
       </div>
 
       <!-- 2. New World Modal -->
       <div id="new-world-modal" class="menu-modal">
         <div class="modal-card">
-          <h2>CREATE NEW REALM</h2>
+          <h2>CREATE NEW WORLD</h2>
           <div class="form-group">
             <label>World Name</label>
-            <input type="text" id="input-world-name" value="My Block Realm" maxlength="24" />
+            <input type="text" id="input-world-name" value="My Voxel Realm" maxlength="24" />
           </div>
           <div class="form-group">
             <label>Game Mode</label>
@@ -69,7 +86,7 @@ export class MenuUI {
       <!-- 3. Load World Modal -->
       <div id="load-world-modal" class="menu-modal">
         <div class="modal-card">
-          <h2>LOAD SAVED REALM</h2>
+          <h2>LOAD SAVED WORLD</h2>
           <div id="world-list-container" class="world-list"></div>
           <div class="modal-actions">
             <button id="btn-close-load" class="btn-secondary">BACK</button>
@@ -133,15 +150,16 @@ export class MenuUI {
           <div class="controls-grid">
             <div><strong>W, A, S, D</strong> - Move / Strafe</div>
             <div><strong>Space</strong> - Jump / Swim Up (Flight Up)</div>
-            <div><strong>Shift</strong> - Sprint / Sneak (Flight Down)</div>
+            <div><strong>Shift</strong> - Sprint / Sneak Ledge Protection</div>
             <div><strong>Left Click</strong> - Mine Block / Attack</div>
-            <div><strong>Right Click</strong> - Place / Interact / Doors</div>
+            <div><strong>Right Click</strong> - Place / Interact / Open Doors</div>
             <div><strong>E</strong> - Inventory / Creative Catalog</div>
             <div><strong>F5</strong> - Toggle 1st / 3rd Person View</div>
             <div><strong>F</strong> - Toggle Creative Flight</div>
+            <div><strong>F3</strong> - Toggle Performance Debug Info</div>
             <div><strong>Q</strong> - Drop Held Item</div>
             <div><strong>1 - 9</strong> - Select Hotbar Slot</div>
-            <div><strong>Mouse Wheel</strong> - Scroll Hotbar</div>
+            <div><strong>Mouse Wheel</strong> - Scroll Hotbar / Zoom 3rd Person</div>
             <div><strong>Esc</strong> - Pause Game</div>
           </div>
           <div class="modal-actions">
@@ -155,8 +173,8 @@ export class MenuUI {
         <div class="modal-card credits-card">
           <h2>ABOUT & CREDITS</h2>
           <div class="credits-body">
-            <h1 class="credits-title">BLOCK REALMS</h1>
-            <div class="credits-sub">VOXEL ODYSSEY</div>
+            <h1 class="credits-title">VOXEL VERSE</h1>
+            <div class="credits-sub">3D VOXEL SURVIVAL ODYSSEY</div>
             <div class="credits-author-box">
               <div class="credits-role">CREATOR & DEVELOPER</div>
               <div class="credits-name">MOHAMMAD FAHAD</div>
@@ -187,7 +205,26 @@ export class MenuUI {
       </div>
     `;
 
+    this.loadingScreen = document.getElementById('loading-screen');
+    this.loadingFill = document.getElementById('loading-bar-fill');
+    this.loadingStatus = document.getElementById('loading-status-text');
+
     this.bindEvents();
+  }
+
+  showLoading(text = 'Generating procedural terrain...') {
+    if (this.loadingStatus) this.loadingStatus.textContent = text;
+    if (this.loadingFill) this.loadingFill.style.width = '10%';
+    if (this.loadingScreen) this.loadingScreen.classList.add('active');
+  }
+
+  updateLoading(pct, text) {
+    if (this.loadingFill) this.loadingFill.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+    if (text && this.loadingStatus) this.loadingStatus.textContent = text;
+  }
+
+  hideLoading() {
+    if (this.loadingScreen) this.loadingScreen.classList.remove('active');
   }
 
   bindEvents() {
@@ -203,10 +240,12 @@ export class MenuUI {
     // Title buttons
     document.getElementById('btn-play-new').addEventListener('click', () => {
       newWorldModal.classList.add('visible');
+      audioManager.playUIClick();
     });
 
     document.getElementById('btn-cancel-new').addEventListener('click', () => {
       newWorldModal.classList.remove('visible');
+      audioManager.playUIClick();
     });
 
     // Game Mode selection buttons in New World modal
@@ -217,26 +256,30 @@ export class MenuUI {
       btnSurv.classList.add('active');
       btnCreat.classList.remove('active');
       this.selectedNewMode = 'survival';
+      audioManager.playUIClick();
     });
 
     btnCreat.addEventListener('click', () => {
       btnCreat.classList.add('active');
       btnSurv.classList.remove('active');
       this.selectedNewMode = 'creative';
+      audioManager.playUIClick();
     });
 
     document.getElementById('btn-random-seed').addEventListener('click', () => {
       document.getElementById('input-world-seed').value = Math.floor(Math.random() * 9999999);
+      audioManager.playUIClick();
     });
 
     document.getElementById('btn-create-confirm').addEventListener('click', () => {
-      const name = document.getElementById('input-world-name').value.trim() || 'My Block Realm';
+      const name = document.getElementById('input-world-name').value.trim() || 'My Voxel Realm';
       const seedVal = document.getElementById('input-world-seed').value.trim();
       const seed = seedVal ? seedVal : Math.floor(Math.random() * 9999999);
       const renderDist = parseInt(document.getElementById('input-render-dist').value, 10) || 5;
 
       newWorldModal.classList.remove('visible');
       titleScreen.classList.remove('active');
+      audioManager.playUIClick();
       this.game.startNewGame(name, seed, renderDist, this.selectedNewMode);
     });
 
@@ -247,51 +290,62 @@ export class MenuUI {
 
     // Load World button
     document.getElementById('btn-load-menu').addEventListener('click', async () => {
+      audioManager.playUIClick();
       await this.refreshWorldList();
       loadWorldModal.classList.add('visible');
     });
 
     document.getElementById('btn-close-load').addEventListener('click', () => {
+      audioManager.playUIClick();
       loadWorldModal.classList.remove('visible');
     });
 
     // Settings
     document.getElementById('btn-settings').addEventListener('click', () => {
+      audioManager.playUIClick();
       settingsModal.classList.add('visible');
     });
 
     document.getElementById('btn-pause-settings').addEventListener('click', () => {
+      audioManager.playUIClick();
       settingsModal.classList.add('visible');
     });
 
     document.getElementById('btn-close-settings').addEventListener('click', () => {
+      audioManager.playUIClick();
       settingsModal.classList.remove('visible');
     });
 
     // Controls
     document.getElementById('btn-controls').addEventListener('click', () => {
+      audioManager.playUIClick();
       controlsModal.classList.add('visible');
     });
 
     document.getElementById('btn-close-controls').addEventListener('click', () => {
+      audioManager.playUIClick();
       controlsModal.classList.remove('visible');
     });
 
     // Credits
     document.getElementById('btn-credits').addEventListener('click', () => {
+      audioManager.playUIClick();
       creditsModal.classList.add('visible');
     });
 
     document.getElementById('btn-close-credits').addEventListener('click', () => {
+      audioManager.playUIClick();
       creditsModal.classList.remove('visible');
     });
 
     // Pause menu buttons
     document.getElementById('btn-resume').addEventListener('click', () => {
+      audioManager.playUIClick();
       this.game.resume();
     });
 
     document.getElementById('btn-toggle-gamemode').addEventListener('click', () => {
+      audioManager.playUIClick();
       const curMode = this.game.player ? this.game.player.gameMode : 'survival';
       const newMode = curMode === 'survival' ? 'creative' : 'survival';
       this.game.setGameMode(newMode);
@@ -299,11 +353,13 @@ export class MenuUI {
     });
 
     document.getElementById('btn-save-world').addEventListener('click', async () => {
+      audioManager.playUIClick();
       await this.game.saveCurrentWorld();
-      this.game.hud.showNotification('Realm saved successfully!');
+      this.game.hud.showNotification('World saved successfully!');
     });
 
     document.getElementById('btn-quit-title').addEventListener('click', () => {
+      audioManager.playUIClick();
       pauseMenu.classList.remove('visible');
       titleScreen.classList.add('active');
       this.game.quitToTitle();
@@ -311,6 +367,7 @@ export class MenuUI {
 
     // Death screen respawn
     document.getElementById('btn-respawn').addEventListener('click', () => {
+      audioManager.playUIClick();
       deathScreen.classList.remove('active');
       this.game.respawnPlayer();
     });
@@ -374,13 +431,13 @@ export class MenuUI {
 
   async refreshWorldList() {
     const listContainer = document.getElementById('world-list-container');
-    listContainer.innerHTML = '<div class="loading-text">Loading realms...</div>';
+    listContainer.innerHTML = '<div class="loading-text">Loading saved worlds...</div>';
 
     const worlds = await saveSystem.getAllWorlds();
     listContainer.innerHTML = '';
 
     if (worlds.length === 0) {
-      listContainer.innerHTML = '<div class="empty-list-msg">No saved realms found. Create one!</div>';
+      listContainer.innerHTML = '<div class="empty-list-msg">No saved worlds found. Create one!</div>';
       return;
     }
 
@@ -402,6 +459,7 @@ export class MenuUI {
       `;
 
       item.querySelector('.btn-play-world').addEventListener('click', () => {
+        audioManager.playUIClick();
         document.getElementById('load-world-modal').classList.remove('visible');
         document.getElementById('title-screen').classList.remove('active');
         this.game.loadSavedGame(w);
@@ -409,6 +467,7 @@ export class MenuUI {
 
       item.querySelector('.btn-del-world').addEventListener('click', async (e) => {
         e.stopPropagation();
+        audioManager.playUIClick();
         if (confirm(`Are you sure you want to delete "${w.name}"?`)) {
           await saveSystem.deleteWorld(w.name);
           await this.refreshWorldList();

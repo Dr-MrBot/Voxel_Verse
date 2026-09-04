@@ -1111,4 +1111,142 @@ button:active {
   display: none !important;
 }
 
+/* ==========================================================================
+   ANIMATED LOADING SCREEN
+   ========================================================================== */
+#loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+#loading-screen.active {
+  display: flex;
+}
+.loading-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 460px;
+  max-width: 90vw;
+  text-align: center;
+}
+.loading-bar-wrapper {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.loading-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00b4d8, #00e5ff, #70e000);
+  border-radius: 6px;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.8);
+  transition: width 0.25s ease-out;
+}
+.loading-status {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+.loading-dev-tag {
+  font-size: 12px;
+  color: #64748b;
+}
+.loading-dev-tag strong {
+  color: #00e5ff;
+}
+
+/* ==========================================================================
+   F3 DEVELOPER PERFORMANCE OVERLAY
+   ========================================================================== */
+#f3-debug-overlay {
+  position: fixed;
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  color: #f8fafc;
+  text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
+  pointer-events: none;
+  z-index: 500;
+}
+#f3-debug-overlay.hidden {
+  display: none !important;
+}
+.f3-left-col, .f3-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.f3-right-col {
+  align-items: flex-end;
+}
+.f3-title {
+  color: #00e5ff;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+/* ==========================================================================
+   FURNACE & CHEST MODAL STYLING
+   ========================================================================== */
+.furnace-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+.furnace-slots-left, .furnace-slots-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.slot-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+.furnace-progress-arrow {
+  font-size: 24px;
+  color: #00e5ff;
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}
+.chest-section {
+  background: rgba(0, 0, 0, 0.35);
+  padding: 14px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+.chest-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 48px);
+  gap: 6px;
+  justify-content: center;
+}
+
+
 
