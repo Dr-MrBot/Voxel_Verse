@@ -34,13 +34,19 @@
 
 You do **not** need any coding experience to play!
 
-1. **Download or Clone** this repository:
-   - Click the green **Code** button at the top of GitHub, then click **Download ZIP**.
-   - Extract the ZIP folder anywhere on your computer (e.g. Desktop).
+### 🪟 On Windows (10 & 11)
+1. **Download or Clone** this repository.
 2. Open the **`Voxel_Verse`** folder.
 3. Double-click **`start.bat`**.
 
-That's it! The launcher will automatically set up everything needed and open the game directly in your web browser at `http://localhost:5173/`.
+### 🐧 On Linux & macOS
+1. Open terminal inside the **`Voxel_Verse`** folder.
+2. Run:
+   ```bash
+   chmod +x start.sh && ./start.sh
+   ```
+
+That's it! The launcher will automatically set up everything needed and open the game directly in your default web browser at `http://localhost:5173/`.
 
 ---
 
